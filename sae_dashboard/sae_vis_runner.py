@@ -137,7 +137,10 @@ class SaeVisRunner:
 
             # ! Get stats (including quantiles, which will be useful for the prompt-centric visualisation)
             feature_stats = FeatureStatistics.create(
-                data=einops.rearrange(all_feat_acts, "b s feats -> feats (b s)"),
+                data=einops.rearrange(
+                    all_feat_acts.to(self.cfg.device, dtype=self.dtype),
+                    "b s feats -> feats (b s)",
+                ),
                 batch_size=self.cfg.quantile_feature_batch_size,
             )
 
@@ -171,8 +174,9 @@ class SaeVisRunner:
                 feature_data_dict[feat].logits_histogram_data = (
                     LogitsHistogramData.from_data(
                         data=logit_vector.to(
-                            torch.float32
-                        ),  # need this otherwise fails on MPS
+                            dtype=torch.float32,
+                            device="cpu",
+                        ),  # no need to do this on GPU
                         n_bins=layout.logits_hist_cfg.n_bins,  # type: ignore
                         tickmode="5 ticks",
                         title=None,

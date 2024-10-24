@@ -52,7 +52,7 @@ class FeatureDataGenerator:
             if self.cfg.minibatch_size_tokens is None
             else tokens.split(self.cfg.minibatch_size_tokens)
         )
-        token_minibatches = [tok.to(self.cfg.device) for tok in token_minibatches]
+        token_minibatches = [tok for tok in token_minibatches]
 
         return token_minibatches
 
@@ -101,7 +101,8 @@ class FeatureDataGenerator:
             )
 
             # Add these to the lists (we'll eventually concat)
-            all_feat_acts.append(feature_acts)
+            # put these on CPU to avoid wasting GPU memory
+            all_feat_acts.append(feature_acts.to("cpu", dtype=torch.float))
 
             # Calculate DFA
             if self.cfg.use_dfa and self.dfa_calculator:
@@ -159,16 +160,14 @@ class FeatureDataGenerator:
         if self.cfg.cache_dir is not None:
             cache_path = self.cfg.cache_dir / f"model_activations_{minibatch_index}.pt"
             if use_cache and cache_path.exists():
-                activation_dict = load_tensor_dict_torch(cache_path, self.cfg.device)
+                activation_dict = load_tensor_dict_torch(cache_path, "cpu")
             else:
                 activation_dict = self.model.forward(
-                    minibatch_tokens.to("cpu"), return_logits=False
+                    minibatch_tokens, return_logits=False
                 )
                 save_tensor_dict_torch(activation_dict, cache_path)
         else:
-            activation_dict = self.model.forward(
-                minibatch_tokens.to("cpu"), return_logits=False
-            )
+            activation_dict = self.model.forward(minibatch_tokens, return_logits=False)
 
         return activation_dict
 
