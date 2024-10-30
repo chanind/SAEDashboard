@@ -7,6 +7,8 @@ import torch
 from jaxtyping import Float, Int
 from sae_lens import SAE
 from sae_lens.config import DTYPE_MAP as DTYPES
+from safetensors import safe_open
+from safetensors.torch import save_file
 from torch import Tensor, nn
 from tqdm.auto import tqdm
 
@@ -158,7 +160,9 @@ class FeatureDataGenerator:
         Uses np.memmap for efficient caching.
         """
         if self.cfg.cache_dir is not None:
-            cache_path = self.cfg.cache_dir / f"model_activations_{minibatch_index}.pt"
+            cache_path = (
+                self.cfg.cache_dir / f"model_activations_{minibatch_index}.safetensors"
+            )
             if use_cache and cache_path.exists():
                 activation_dict = load_tensor_dict_torch(cache_path, "cpu")
             else:
@@ -207,13 +211,16 @@ class FeatureDataGenerator:
 
 
 def save_tensor_dict_torch(tensor_dict: Dict[str, torch.Tensor], filename: Path):
-    torch.save(tensor_dict, filename)
+    save_file(tensor_dict, filename)
+    # torch.save(tensor_dict, filename)
 
 
 def load_tensor_dict_torch(filename: Path, device: str) -> Dict[str, torch.Tensor]:
-    return torch.load(
-        filename, map_location=torch.device(device)
-    )  # Directly load to GPU
+    tensors = {}
+    with safe_open(filename, framework="pt", device=device) as f:  # type: ignore
+        for key in f.keys():
+            tensors[key] = f.get_tensor(key)
+    return tensors
 
 
 class FeatureMaskingContext:
