@@ -164,7 +164,7 @@ class FeatureDataGenerator:
                 self.cfg.cache_dir / f"model_activations_{minibatch_index}.safetensors"
             )
             if use_cache and cache_path.exists():
-                activation_dict = load_tensor_dict_torch(cache_path, "cpu")
+                activation_dict = load_tensor_dict_torch(cache_path, self.cfg.device)
             else:
                 activation_dict = self.model.forward(
                     minibatch_tokens, return_logits=False
