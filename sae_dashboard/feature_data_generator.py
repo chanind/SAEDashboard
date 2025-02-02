@@ -69,10 +69,13 @@ class FeatureDataGenerator:
         all_feat_acts = []
         all_dfa_results = {feature_idx: {} for feature_idx in feature_indices}
         total_prompts = 0
+        device = torch.device(self.cfg.device)
 
         # Create objects to store the data for computing rolling stats
-        corrcoef_neurons = RollingCorrCoef()
-        corrcoef_encoder = RollingCorrCoef(indices=feature_indices, with_self=True)
+        corrcoef_neurons = RollingCorrCoef(device=device)
+        corrcoef_encoder = RollingCorrCoef(
+            indices=feature_indices, with_self=True, device=device
+        )
 
         # Get encoder & decoder directions
         feature_out_dir = self.encoder.W_dec[feature_indices]  # [feats d_autoencoder]
