@@ -149,7 +149,7 @@ class FeatureDataGenerator:
             if progress is not None:
                 progress[0].update(1)
 
-        all_feat_acts = torch.cat(all_feat_acts, dim=0)
+        all_feat_acts = torch.cat(all_feat_acts, dim=0).to(self.cfg.device)
 
         return (
             all_feat_acts,
