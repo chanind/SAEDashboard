@@ -1,3 +1,4 @@
+import gc
 import math
 import random
 import re
@@ -127,6 +128,7 @@ class SaeVisRunner:
                 corrcoef_encoder,
                 batch_dfa_results,
             ) = feature_data_generator.get_feature_data(features, progress)
+            all_feat_acts = all_feat_acts.to(self.device, dtype=self.dtype)
 
             # Get the logits of all features (i.e. the directions this feature writes to the logit output)
             logits = einops.einsum(
@@ -260,6 +262,19 @@ class SaeVisRunner:
             )
 
             sae_vis_data.update(new_feature_data)
+
+            del all_feat_acts
+            del feature_resid_dir
+            del feature_out_dir
+            del corrcoef_neurons
+            del corrcoef_encoder
+            del batch_dfa_results
+            del logits
+            del feature_data_dict
+            del feature_stats
+
+            gc.collect()
+            torch.cuda.empty_cache()
 
         # Now exited, make sure the progress bar is at 100%
         if progress is not None:

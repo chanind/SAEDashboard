@@ -1,3 +1,4 @@
+import gc
 from pathlib import Path
 from typing import Dict, List
 
@@ -117,7 +118,7 @@ class FeatureDataGenerator:
 
             # Add these to the lists (we'll eventually concat)
             # put these on CPU to avoid wasting GPU memory
-            all_feat_acts.append(feature_acts.to("cpu", dtype=torch.float))
+            all_feat_acts.append(feature_acts)
 
             # Calculate DFA
             if self.cfg.use_dfa and self.dfa_calculator:
@@ -149,7 +150,10 @@ class FeatureDataGenerator:
             if progress is not None:
                 progress[0].update(1)
 
-        all_feat_acts = torch.cat(all_feat_acts, dim=0).to(self.cfg.device)
+        all_feat_acts = torch.cat(all_feat_acts, dim=0)
+
+        gc.collect()
+        torch.cuda.empty_cache()
 
         return (
             all_feat_acts,
